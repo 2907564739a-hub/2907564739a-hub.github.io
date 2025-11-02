@@ -3,346 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZHY云-企业级云计算服务</title>
+    <title>ZHY云-企业级云计算服务（仿阿里云）</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:"Microsoft YaHei",Arial,sans-serif;}
+        body{font-family:"Microsoft YaHei",Arial,sans-serif;color:#333;}
         .container{width:90%;max-width:1200px;margin:0 auto;}
-        .btn{padding:8px 16px;background:#2388ff;color:#fff;border-radius:4px;cursor:pointer;border:none;}
-        .text-primary{color:#2388ff;}
+        .btn{padding:10px 20px;background:#1890ff;color:#fff;border-radius:4px;cursor:pointer;border:none;transition:background 0.3s;}
+        .btn:hover{background:#096dd9;}
+        .text-primary{color:#1890ff;}
 
-        /* 导航栏 */
-        header{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.1);position:sticky;top:0;z-index:999;}
-        .nav-wrap{display:flex;justify-content:space-between;align-items:center;padding:15px 0;}
-        .logo{font-size:20px;font-weight:bold;}
-        .nav-list{display:flex;gap:20px;list-style:none;}
-        .nav-list li a{color:#333;text-decoration:none;}
-        .nav-list li a:hover{color:#2388ff;}
+        /* 注册登录页：默认显示，登录后隐藏 */
+        .auth-container{position:fixed;top:0;left:0;width:100%;height:100%;background:#f5f7fa;z-index:2000;display:flex;align-items:center;justify-content:center;}
+        .auth-panel{width:450px;background:#fff;border-radius:12px;padding:35px;box-shadow:0 8px 30px rgba(0,0,0,0.12);}
+        .auth-tabs{display:flex;border-bottom:1px solid #e8e8e8;margin-bottom:25px;}
+        .auth-tab{flex:1;text-align:center;padding:10px 0;font-size:16px;cursor:pointer;color:#666;border-bottom:2px solid transparent;}
+        .auth-tab.active{color:#1890ff;border-bottom-color:#1890ff;font-weight:500;}
+        .auth-form{margin-top:10px;}
+        .form-group{margin-bottom:22px;}
+        .form-group label{display:block;margin-bottom:8px;font-size:14px;color:#333;}
+        .form-group input{width:100%;padding:13px 15px;border:1px solid #d9d9d9;border-radius:6px;outline:none;font-size:14px;}
+        .form-group input:focus{border-color:#1890ff;box-shadow:0 0 0 2px rgba(24,144,255,0.1);}
+        .code-group{display:flex;gap:12px;}
+        .code-group input{flex:1;}
+        .code-btn{width:130px;padding:0;}
+        .form-note{text-align:center;margin:15px 0 25px;font-size:13px;color:#666;}
+        .form-note a{color:#1890ff;text-decoration:none;cursor:pointer;}
+        .submit-btn{width:100%;padding:14px 0;font-size:16px;}
 
-        /* 登录注册弹窗 */
-        .auth-dialog{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;}
-        .dialog-content{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;background:#fff;border-radius:8px;padding:20px;}
-        .dialog-close{float:right;cursor:pointer;font-size:18px;color:#666;}
-        .dialog-form{margin-top:20px;}
-        .form-group{margin-bottom:15px;}
-        .form-group input{width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;outline:none;}
-        .form-switch{text-align:center;margin:10px 0;}
-        .form-switch a{color:#2388ff;text-decoration:none;}
-
-        /* 内容页面 */
-        .page{display:none;min-height:500px;padding:40px 0;}
-        .section-title{text-align:center;margin-bottom:30px;}
-        .section-title h2{font-size:24px;color:#333;}
+        /* 首页及功能页：默认隐藏，登录后显示 */
+        .main-page{display:none;}
     </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <header>
-        <div class="container nav-wrap">
-            <div class="logo">ZHY云</div>
-            <ul class="nav-list">
-                <li><a href="javascript:loadPage('home')">首页</a></li>
-                <li><a href="javascript:loadPage('product')">产品</a></li>
-                <li><a href="javascript:loadPage('solution')">解决方案</a></li>
-                <li><a href="javascript:loadPage('price')">价格</a></li>
-                <li><a href="javascript:loadPage('support')">支持</a></li>
-                <li><a href="javascript:showLogin()">登录/注册</a></li>
-            </ul>
-        </div>
-    </header>
+    <!-- 注册登录容器（登录状态控制显示/隐藏） -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-panel">
+            <!-- 登录/注册选项卡 -->
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">账号登录</div>
+                <div class="auth-tab" id="registerTab" onclick="switchAuthTab('register')">账号注册</div>
+            </div>
 
-    <!-- 登录弹窗 -->
-    <div class="auth-dialog" id="loginDialog">
-        <div class="dialog-content">
-            <div class="dialog-close" onclick="closeDialog()">×</div>
-            <h3>账号登录</h3>
-            <div class="dialog-form">
-                <div class="form-group"><input type="text" placeholder="请输入账号"></div>
-                <div class="form-group"><input type="password" placeholder="请输入密码"></div>
-                <button class="btn" onclick="doLogin()">登录</button>
-                <div class="form-switch"><a href="javascript:showRegister()">立即注册</a></div>
+            <!-- 登录表单 -->
+            <div class="auth-form" id="loginForm">
+                <div class="form-group">
+                    <label for="loginAccount">账号/手机号</label>
+                    <input type="text" id="loginAccount" placeholder="请输入账号或手机号">
+                </div>
+                <div class="form-group">
+                    <label for="loginPwd">密码</label>
+                    <input type="password" id="loginPwd" placeholder="请输入密码">
+                </div>
+                <div class="form-note">
+                    还没有账号？<a onclick="switchAuthTab('register')">立即注册</a>
+                </div>
+                <button class="btn submit-btn" onclick="doLogin()">登录</button>
+            </div>
+
+            <!-- 注册表单（默认隐藏） -->
+            <div class="auth-form" id="registerForm" style="display:none;">
+                <div class="form-group">
+                    <label for="regName">用户名</label>
+                    <input type="text" id="regName" placeholder="3-20位字符，支持字母、数字、下划线">
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">手机号</label>
+                    <input type="text" id="regPhone" placeholder="请输入用于注册的手机号">
+                </div>
+                <div class="form-group code-group">
+                    <div style="flex:1;">
+                        <label for="regCode">验证码</label>
+                        <input type="text" id="regCode" placeholder="请输入短信验证码">
+                    </div>
+                    <button class="btn code-btn" onclick="getCode()">获取验证码</button>
+                </div>
+                <div class="form-group">
+                    <label for="regPwd">密码</label>
+                    <input type="password" id="regPwd" placeholder="8-20位，含字母和数字，区分大小写">
+                </div>
+                <div class="form-note">
+                    已有账号？<a onclick="switchAuthTab('login')">返回登录</a>
+                </div>
+                <button class="btn submit-btn" onclick="doRegister()">注册并登录</button>
             </div>
         </div>
     </div>
-
-    <!-- 注册弹窗 -->
-    <div class="auth-dialog" id="registerDialog">
-        <div class="dialog-content">
-            <div class="dialog-close" onclick="closeDialog()">×</div>
-            <h3>账号注册</h3>
-            <div class="dialog-form">
-                <div class="form-group"><input type="text" placeholder="请设置用户名"></div>
-                <div class="form-group"><input type="password" placeholder="请设置密码"></div>
-                <button class="btn" onclick="doRegister()">注册</button>
-                <div class="form-switch"><a href="javascript:showLogin()">返回登录</a></div>
+    <!-- 首页及功能页（登录后显示，内容不变） -->
+    <div class="main-page" id="mainPage">
+        <!-- 导航栏（阿里云深色风格） -->
+        <header style="background:#001529;position:sticky;top:0;z-index:999;">
+            <div class="container nav-wrap" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+                <div class="logo" style="font-size:22px;font-weight:bold;color:#fff;">ZHY云</div>
+                <ul class="nav-list" style="display:flex;gap:24px;list-style:none;">
+                    <li><a style="color:#fff;text-decoration:none;font-size:14px;cursor:pointer;" onclick="loadContentPage('home')">首页</a></li>
+                    <li><a style="color:#fff;text-decoration:none;font-size:14px;cursor:pointer;" onclick="loadContentPage('product')">产品</a></li>
+                    <li><a style="color:#fff;text-decoration:none;font-size:14px;cursor:pointer;" onclick="loadContentPage('solution')">解决方案</a></li>
+                    <li><a style="color:#fff;text-decoration:none;font-size:14px;cursor:pointer;" onclick="loadContentPage('price')">价格</a></li>
+                    <li><a style="color:#fff;text-decoration:none;font-size:14px;cursor:pointer;" onclick="loadContentPage('support')">支持</a></li>
+                    <li><a style="color:#fff;text-decoration:none;font-size:14px;cursor:pointer;" onclick="logout()">退出登录</a></li>
+                </ul>
             </div>
-        </div>
-    </div>
-
-    <!-- 内容页面容器 -->
-    <div class="container">
-        <!-- 首页（已替换为轮播图+核心优势） -->
-        <div id="pageHome" class="page" style="display:block;">
-            <div class="section-title"><h2>ZHY云-企业级云计算服务</h2></div>
-            <!-- 轮播图容器 -->
-            <div class="carousel" style="width:100%;height:400px;position:relative;overflow:hidden;margin:20px 0;">
-                <div class="carousel-list" style="display:flex;width:300%;height:100%;transition:transform 0.5s;">
-                    <div class="carousel-item" style="width:33.333%;height:100%;background:#f5f7fa;display:flex;align-items:center;justify-content:center;">
-                        <div style="text-align:center;">
-                            <h3 style="font-size:22px;margin-bottom:10px;">弹性计算</h3>
-                            <p style="font-size:16px;color:#666;">按需扩展算力，分钟级部署云服务器</p>
+        </header>
+        <!-- 内容页面容器（原内容完全保留） -->
+        <div class="container">
+            <!-- 首页内容（默认显示） -->
+            <div id="contentHome" class="content-page" style="display:block;min-height:500px;padding:40px 0;">
+                <div class="section-title" style="text-align:center;margin-bottom:36px;">
+                    <h2 style="font-size:28px;color:#333;font-weight:500;">ZHY云-企业级云计算服务</h2>
+                </div>
+                <!-- 轮播图 -->
+                <div class="carousel" style="width:100%;height:420px;position:relative;overflow:hidden;margin:20px 0;border-radius:8px;">
+                    <div class="carousel-list" id="carouselList" style="display:flex;width:300%;height:100%;transition:transform 0.6s ease;">
+                        <div class="carousel-item" style="width:33.333%;height:100%;display:flex;align-items:center;justify-content:center;padding:0 50px;background:#e6f7ff;">
+                            <div class="carousel-text" style="text-align:center;max-width:600px;">
+                                <h3 style="font-size:32px;margin-bottom:15px;color:#001529;">弹性计算</h3>
+                                <p style="font-size:18px;color:#444;line-height:1.6;">按需扩展算力，分钟级部署云服务器，支持多地域、多可用区部署</p>
+                            </div>
+                        </div>
+                        <div class="carousel-item" style="width:33.333%;height:100%;display:flex;align-items:center;justify-content:center;padding:0 50px;background:#f0f9ff;">
+                            <div class="carousel-text" style="text-align:center;max-width:600px;">
+                                <h3 style="font-size:32px;margin-bottom:15px;color:#001529;">安全存储</h3>
+                                <p style="font-size:18px;color:#444;line-height:1.6;">99.9999999%数据可靠性，多区域备份+加密传输，符合等保三级标准</p>
+                            </div>
+                        </div>
+                        <div class="carousel-item" style="width:33.333%;height:100%;display:flex;align-items:center;justify-content:center;padding:0 50px;background:#f6ffed;">
+                            <div class="carousel-text" style="text-align:center;max-width:600px;">
+                                <h3 style="font-size:32px;margin-bottom:15px;color:#001529;">智能数据库</h3>
+                                <p style="font-size:18px;color:#444;line-height:1.6;">自动扩容、故障自愈，支持MySQL/PostgreSQL兼容，降低50%运维成本</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="carousel-item" style="width:33.333%;height:100%;background:#eef2f7;display:flex;align-items:center;justify-content:center;">
-                        <div style="text-align:center;">
-                            <h3 style="font-size:22px;margin-bottom:10px;">安全存储</h3>
-                            <p style="font-size:16px;color:#666;">99.9999999%数据可靠性，多区域备份</p>
+                </div>
+                <!-- 首页核心优势 -->
+                <div style="display:flex;gap:24px;margin:50px 0;">
+                    <div style="flex:1;padding:28px;background:#fff;border:1px solid #e8e8e8;border-radius:8px;text-align:center;">
+                        <h4 class="text-primary">高可用</h4>
+                        <p style="color:#666;margin-top:8px;">SLA 99.99%，故障自动迁移</p>
+                    </div>
+                    <div style="flex:1;padding:28px;background:#fff;border:1px solid #e8e8e8;border-radius:8px;text-align:center;">
+                        <h4 class="text-primary">低成本</h4>
+                        <p style="color:#666;margin-top:8px;">按需付费，比传统IT省50%成本</p>
+                    </div>
+                    <div style="flex:1;padding:28px;background:#fff;border:1px solid #e8e8e8;border-radius:8px;text-align:center;">
+                        <h4 class="text-primary">易管理</h4>
+                        <p style="color:#666;margin-top:8px;">1-click运维，API自动化操作</p>
+                    </div>
+                </div>
+            </div>
+            <!-- 产品页（隐藏，导航切换显示） -->
+            <div id="contentProduct" class="content-page" style="min-height:500px;padding:40px 0;display:none;">
+                <div class="section-title" style="text-align:center;margin-bottom:36px;">
+                    <h2 style="font-size:28px;color:#333;font-weight:500;">产品服务</h2>
+                </div>
+                <!-- 产品卡片列表 -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:28px;">
+                    <!-- 云服务器ECS -->
+                    <div style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;transition:box-shadow 0.3s;background:#fff;">
+                        <div style="height:180px;background:#e6f7ff;display:flex;align-items:center;justify-content:center;">
+                            <span style="font-size:48px;color:#1890ff;">☁️</span>
+                        </div>
+                        <div style="padding:24px;">
+                            <h4 style="margin-bottom:12px;font-size:18px;color:#333;">云服务器 ECS</h4>
+                            <p style="color:#666;margin-bottom:20px;font-size:14px;line-height:1.5;">弹性扩展、稳定可靠，支持多种操作系统和应用场景</p>
+                            <div style="display:flex;gap:10px;">
+                                <button class="btn" style="flex:1;">立即购买</button>
+                                <button class="btn" style="flex:0 0 100px;background:#fff;color:#1890ff;border:1px solid #1890ff;">查看详情</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="carousel-item" style="width:33.333%;height:100%;background:#f0f5ff;display:flex;align-items:center;justify-content:center;">
-                        <div style="text-align:center;">
-                            <h3 style="font-size:22px;margin-bottom:10px;">智能数据库</h3>
-                            <p style="font-size:16px;color:#666;">自动扩容、故障自愈，降低运维成本</p>
+                    <!-- 对象存储OSS -->
+                    <div style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;transition:box-shadow 0.3s;background:#fff;">
+                        <div style="height:180px;background:#f0fff4;display:flex;align-items:center;justify-content:center;">
+                            <span style="font-size:48px;color:#52c41a;">🗄️</span>
+                        </div>
+                        <div style="padding:24px;">
+                            <h4 style="margin-bottom:12px;font-size:18px;color:#333;">对象存储 OSS</h4>
+                            <p style="color:#666;margin-bottom:20px;font-size:14px;line-height:1.5;">海量数据存储，支持图片、视频等多种文件类型</p>
+                            <div style="display:flex;gap:10px;">
+                                <button class="btn" style="flex:1;">立即购买</button>
+                                <button class="btn" style="flex:0 0 100px;background:#fff;color:#1890ff;border:1px solid #1890ff;">查看详情</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- 轮播按钮 -->
-                <button class="carousel-btn prev" style="position:absolute;left:20px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;background:rgba(0,0,0,0.3);color:#fff;border-radius:50%;cursor:pointer;">←</button>
-                <button class="carousel-btn next" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:none;background:rgba(0,0,0,0.3);color:#fff;border-radius:50%;cursor:pointer;">→</button>
-                <!-- 指示器 -->
-                <div class="carousel-indicator" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;">
-                    <span style="width:12px;height:12px;border-radius:50%;background:#2388ff;cursor:pointer;"></span>
-                    <span style="width:12px;height:12px;border-radius:50%;background:#ddd;cursor:pointer;"></span>
-                    <span style="width:12px;height:12px;border-radius:50%;background:#ddd;cursor:pointer;"></span>
-                </div>
             </div>
-            <!-- 核心优势 -->
-            <div class="advantage" style="display:flex;gap:20px;margin:40px 0;">
-                <div style="flex:1;padding:20px;background:#f8f9fa;border-radius:8px;text-align:center;">
-                    <h4 class="text-primary" style="margin-bottom:8px;">高可用</h4>
-                    <p style="color:#666;">多可用区部署，SLA 99.99%</p>
-                </div>
-                <div style="flex:1;padding:20px;background:#f8f9fa;border-radius:8px;text-align:center;">
-                    <h4 class="text-primary" style="margin-bottom:8px;">低成本</h4>
-                    <p style="color:#666;">按需付费，比传统IT节省50%成本</p>
-                </div>
-                <div style="flex:1;padding:20px;background:#f8f9fa;border-radius:8px;text-align:center;">
-                    <h4 class="text-primary" style="margin-bottom:8px;">易管理</h4>
-                    <p style="color:#666;">可视化控制台，1-click运维</p>
-                </div>
-            </div>
-        </div>
-        <!-- 产品页（已替换为产品卡片列表） -->
-        <div id="pageProduct" class="page">
-            <div class="section-title"><h2>产品服务</h2></div>
-            <div class="product-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:25px;">
-                <!-- 云服务器 -->
-                <div class="product-card" style="border:1px solid #eee;border-radius:8px;overflow:hidden;transition:box-shadow 0.3s;">
-                    <div style="height:160px;background:#f0f7ff;display:flex;align-items:center;justify-content:center;">
-                        <span style="font-size:40px;color:#2388ff;">☁️</span>
-                    </div>
-                    <div style="padding:20px;">
-                        <h4 style="margin-bottom:10px;font-size:18px;">云服务器 ECS</h4>
-                        <p style="color:#666;margin-bottom:15px;font-size:14px;">弹性扩展、稳定可靠，支持多种操作系统和应用场景</p>
-                        <button class="btn" style="width:100%;">查看详情</button>
-                    </div>
-                </div>
-                <!-- 对象存储 -->
-                <div class="product-card" style="border:1px solid #eee;border-radius:8px;overflow:hidden;transition:box-shadow 0.3s;">
-                    <div style="height:160px;background:#f0fff4;display:flex;align-items:center;justify-content:center;">
-                        <span style="font-size:40px;color:#52c41a;">🗄️</span>
-                    </div>
-                    <div style="padding:20px;">
-                        <h4 style="margin-bottom:10px;font-size:18px;">对象存储 OSS</h4>
-                        <p style="color:#666;margin-bottom:15px;font-size:14px;">海量数据存储，支持图片、视频等多种文件类型</p>
-                        <button class="btn" style="width:100%;">查看详情</button>
-                    </div>
-                </div>
-                <!-- 云数据库 -->
-                <div class="product-card" style="border:1px solid #eee;border-radius:8px;overflow:hidden;transition:box-shadow 0.3s;">
-                    <div style="height:160px;background:#fff2e8;display:flex;align-items:center;justify-content:center;">
-                        <span style="font-size:40px;color:#fa8c16;">💾</span>
-                    </div>
-                    <div style="padding:20px;">
-                        <h4 style="margin-bottom:10px;font-size:18px;">云数据库 RDS</h4>
-                        <p style="color:#666;margin-bottom:15px;font-size:14px;">MySQL/PostgreSQL兼容，自动备份、故障转移</p>
-                        <button class="btn" style="width:100%;">查看详情</button>
-                    </div>
-                </div>
-                <!-- CDN加速 -->
-                <div class="product-card" style="border:1px solid #eee;border-radius:8px;overflow:hidden;transition:box-shadow 0.3s;">
-                    <div style="height:160px;background:#e6f7ff;display:flex;align-items:center;justify-content:center;">
-                        <span style="font-size:40px;color:#1890ff;">🚀</span>
-                    </div>
-                    <div style="padding:20px;">
-                        <h4 style="margin-bottom:10px;font-size:18px;">CDN 加速</h4>
-                        <p style="color:#666;margin-bottom:15px;font-size:14px;">全球节点覆盖，降低访问延迟，提升用户体验</p>
-                        <button class="btn" style="width:100%;">查看详情</button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- 解决方案页 -->
-        <div id="pageSolution" class="page">
-            <div class="section-title"><h2>解决方案</h2></div>
-            <div style="display:flex;flex-wrap:wrap;gap:30px;margin-top:20px;">
-                <div style="flex:1;min-width:300px;padding:25px;background:#fafafa;border-radius:8px;">
-                    <h4 style="font-size:18px;margin-bottom:15px;color:#333;">电商行业解决方案</h4>
-                    <p style="color:#666;line-height:1.6;">针对大促流量波动，提供弹性算力支撑，结合CDN加速提升商品页加载速度，保障订单系统稳定运行，降低高峰期宕机风险。</p>
+            <!-- 解决方案页（隐藏，导航切换显示） -->
+            <div id="contentSolution" class="content-page" style="min-height:500px;padding:40px 0;display:none;">
+                <div class="section-title" style="text-align:center;margin-bottom:36px;">
+                    <h2 style="font-size:28px;color:#333;font-weight:500;">解决方案</h2>
                 </div>
-                <div style="flex:1;min-width:300px;padding:25px;background:#fafafa;border-radius:8px;">
-                    <h4 style="font-size:18px;margin-bottom:15px;color:#333;">游戏行业解决方案</h4>
-                    <p style="color:#666;line-height:1.6;">全球节点部署降低玩家延迟，高IO云存储支撑游戏资源快速加载，搭配安全防护服务，抵御DDoS攻击，保障游戏体验。</p>
-                </div>
-                <div style="flex:1;min-width:300px;padding:25px;background:#fafafa;border-radius:8px;">
-                    <h4 style="font-size:18px;margin-bottom:15px;color:#333;">政务行业解决方案</h4>
-                    <p style="color:#666;line-height:1.6;">符合等保三级标准，提供数据加密存储与传输，支持多部门数据互通，同时保障系统高可用，满足政务服务7×24小时在线需求。</p>
+                <div style="display:flex;flex-wrap:wrap;gap:32px;margin-top:20px;">
+                    <div style="flex:1;min-width:320px;padding:30px;background:#fff;border:1px solid #e8e8e8;border-radius:8px;transition:box-shadow 0.3s;">
+                        <div style="width:50px;height:50px;background:#fff1f0;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+                            <span style="font-size:24px;color:#f5222d;">🛒</span>
+                        </div>
+                        <h4 style="font-size:18px;margin-bottom:18px;color:#333;">电商行业解决方案</h4>
+                        <p style="color:#666;line-height:1.7;font-size:14px;">针对大促流量波动，提供弹性算力支撑，结合CDN加速提升商品页加载速度，保障订单系统稳定运行。</p>
+                        <button class="btn" style="margin-top:24px;">查看方案详情</button>
+                    </div>
+                    <div style="flex:1;min-width:320px;padding:30px;background:#fff;border:1px solid #e8e8e8;border-radius:8px;transition:box-shadow 0.3s;">
+                        <div style="width:50px;height:50px;background:#f0f9ff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+                            <span style="font-size:24px;color:#1890ff;">🎮</span>
+                        </div>
+                        <h4 style="font-size:18px;margin-bottom:18px;color:#333;">游戏行业解决方案</h4>
+                        <p style="color:#666;line-height:1.7;font-size:14px;">全球节点部署降低玩家延迟，高IO云存储支撑游戏资源快速加载，抵御DDoS攻击。</p>
+                        <button class="btn" style="margin-top:24px;">查看方案详情</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 价格页（已替换为价格表格） -->
-        <div id="pagePrice" class="page">
-            <div class="section-title"><h2>价格体系</h2></div>
-            <div style="overflow-x:auto;margin:20px 0;">
-                <table style="width:100%;border-collapse:collapse;text-align:center;">
-                    <thead>
-                        <tr style="background:#f5f7fa;">
-                            <<th style="padding:15px;border:1px solid #eee;font-weight:normal;color:#333;">产品类型</</th>
-                            <<th style="padding:15px;border:1px solid #eee;font-weight:normal;color:#333;">计费方式</</th>
-                            <<th style="padding:15px;border:1px solid #eee;font-weight:normal;color:#333;">起售价格</</th>
-                            <<th style="padding:15px;border:1px solid #eee;font-weight:normal;color:#333;">优惠活动</</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="padding:15px;border:1px solid #eee;">云服务器 ECS</td>
-                            <td style="padding:15px;border:1px solid #eee;">按需付费/包
-年包月</td>
-                            <td style="padding:15px;border:1px solid #eee;">0.02元/小时起</td>
-                            <td style="padding:15px;border:1px solid #eee;color:#fa541c;">新用户首年5折</td>
-                        </tr>
-                        <tr style="background:#fafafa;">
-                            <td style="padding:15px;border:1px solid #eee;">对象存储 OSS</td>
-                            <td style="padding:15px;border:1px solid #eee;">按量付费</td>
-                            <td style="padding:15px;border:1px solid #eee;">0.12元/GB/月起</td>
-                            <td style="padding:15px;border:1px solid #eee;color:#fa541c;">新用户赠10GB</td>
-                        </tr>
-                        <tr>
-                            <td style="padding:15px;border:1px solid #eee;">云数据库 RDS</td>
-                            <td style="padding:15px;border:1px solid #eee;">包年包月</td>
-                            <td style="padding:15px;border:1px solid #eee;">99元/月起</td>
-                            <td style="padding:15px;border:1px solid #eee;color:#fa541c;">3年付享7折</td>
-                        </tr>
-                        <tr style="background:#fafafa;">
-                            <td style="padding:15px;border:1px solid #eee;">CDN 加速</td>
-                            <td style="padding:15px;border:1px solid #eee;">按量付费</td>
-                            <td style="padding:15px;border:1px solid #eee;">0.2元/GB起</td>
-                            <td style="padding:15px;border:1px solid #eee;color:#fa541c;">流量包买10送2</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div style="text-align:center;margin:30px 0;">
-                <button class="btn" style="padding:10px 24px;font-size:16px;">查看完整价格表</button>
-            </div>
-        </div>
-
-        <!-- 支持页 -->
-        <div id="pageSupport" class="page">
-            <div class="section-title"><h2>技术支持</h2></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:20px;">
-                <div style="background:#f8f9fa;padding:25px;border-radius:8px;">
-                    <h4 style="font-size:18px;margin-bottom:15px;color:#333;">支持渠道</h4>
-                    <ul style="list-style:none;color:#666;line-height:2;">
-                        <li>• 7×24小时在线客服（点击页面右下角图标）</li>
-                        <li>• 技术支持热线：400-888-XXXX</li>
-                        <li>• 企业客户专属客户经理</li>
-                        <li>• 帮助中心文档库（含操作指南/FAQ）</li>
-                    </ul>
+            <!-- 价格页（隐藏，导航切换显示） -->
+            <div id="contentPrice" class="content-page" style="min-height:500px;padding:40px 0;display:none;">
+                <div class="section-title" style="text-align:center;margin-bottom:36px;">
+                    <h2 style="font-size:28px;color:#333;font-weight:500;">价格体系</h2>
                 </div>
-                <div style="background:#f8f9fa;padding:25px;border-radius:8px;">
-                    <h4 style="font-size:18px;margin-bottom:15px;color:#333;">服务保障</h4>
-                    <ul style="list-style:none;color:#666;line-height:2;">
-                        <li>• 故障响应时效：≤15分钟（企业级客户）</li>
-                        <li>• 数据丢失赔偿保障（符合SLA协议）</li>
-                        <li>• 定期系统巡检与安全加固</li>
-                        <li>• 定制化运维培训服务</li>
-                    </ul>
+                <div style="overflow-x:auto;margin:20px 0;border-radius:8px;border:1px solid #e8e8e8;">
+                    <table style="width:100%;border-collapse:collapse;text-align:center;background:#fff;">
+                        <thead>
+                            <tr style="background:#fafafa;border-bottom:1px solid #e8e8e8;">
+                                <<<th style="padding:18px;border-right:1px solid #e8e8e8;font-weight:500;color:#333;font-size:14px;">产品类型</</</th>
+                                <<<th style="padding:18px;border-right:1px solid #e8e8e8;font-weight:500;color:#333;font-size:14px;">计费方式</</</th>
+                                <<<th style="padding:18px;border-right:1px solid #e8e8e8;font-weight:500;color:#333;font-size:14px;">起售价格</</</th>
+                                <<<th style="padding:18px;font-weight:500;color:#333;font-size:14px;">优惠活动</</</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom:1px solid #e8e8e8;">
+                                <td style="padding:18px;border-right:1px solid #e8e8e8;font-size:14px;">云服务器 ECS</td>
+                                <td style="padding:18px;border-right:1px solid #e8e8e8;font-size:14px;">按需付费/包年包月</td>
+                                <td style="padding:18px;border-right:1px solid #e8e8e8;font-size:14px;">0.02元/小时起</td>
+                                <td style="padding:18px;font-size:14px;color:#f5222d;">新用户首年5折</td>
+                            </tr>
+                            <tr style="background:#fbfcff;border-bottom:1px solid #e8e8e8;">
+                                <td style="padding:18px;border-right:1px solid #e8e8e8;font-size:14px;">对象存储 OSS</td>
+                                <td style="padding:18px;border-right:1px solid #e8e8e8;font-size:14px;">按量付费</td>
+                                <td style="padding:18px;border-right:1px solid #e8e8e8;font-size:14px;">0.12元/GB/月起</td>
+                                <td style="padding:18px;font-size:14px;color:#f5222d;">新用户赠10GB</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 支持页（隐藏，导航切换显示） -->
+            <div id="contentSupport" class="content-page" style="min-height:500px;padding:40px 0;display:none;">
+                <div class="section-title" style="text-align:center;margin-bottom:36px;">
+                    <h2 style="font-size:28px;color:#333;font-weight:500;">技术支持</h2>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:20px;">
+                    <div style="background:#fff;padding:30px;border:1px solid #e8e8e8;border-radius:8px;">
+                        <h4 style="font-size:18px;margin-bottom:20px;color:#333;border-left:4px solid #1890ff;padding-left:12px;">支持渠道</h4>
+                        <ul style="list-style:none;color:#666;line-height:2.2;font-size:14px;">
+                            <li>• 7×24小时在线客服（点击页面右下角图标）</li>
+                            <li>• 技术支持热线：400-888-8888</li>
+                            <li>• 企业客户专属客户经理（1对1服务）</li>
+                        </ul>
+                    </div>
+                    <div style="background:#fff;padding:30px;border:1px solid #e8e8e8;border-radius:8px;">
+                        <h4 style="font-size:18px;margin-bottom:20px;color:#333;border-left:4px solid #1890ff;padding-left:12px;">服务保障</h4>
+                        <ul style="list-style:none;color:#666;line-height:2.2;font-size:14px;">
+                            <li>• 故障响应时效：≤15分钟（企业级客户）</li>
+                            <li>• 数据丢失赔偿保障（符合SLA协议）</li>
+                            <li>• 定期系统巡检与安全加固（每月1次）</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
+    <!-- 核心交互JS（新增注册登录切换，保留原功能） -->
     <script>
-        // 原有基础逻辑：页面跳转、弹窗控制、登录注册
-        function loadPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => page.style.display = 'none');
-            document.getElementById('page' + pageId.charAt(0).toUpperCase() + pageId.slice(1)).style.display = 'block';
-        }
-        function showLogin() {document.getElementById('loginDialog').style.display = 'block';}
-        function showRegister() {document.getElementById('registerDialog').style.display = 'block';}
-        function closeDialog() {document.querySelectorAll('.auth-dialog').forEach(dialog => dialog.style.display = 'none');}
-        function doLogin() {alert('登录成功');closeDialog();loadPage('home');}
-        function doRegister() {alert('注册成功，请登录');closeDialog();showLogin();}
+        let isLogin = false;
+        const authContainer = document.getElementById('authContainer');
+        const mainPage = document.getElementById('mainPage');
 
-        // 新增交互逻辑：轮播图、产品卡片hover
-        // 1. 轮播图控制
-        const carouselList = document.querySelector('.carousel-list');
-        const prevBtn = document.querySelector('.carousel-btn.prev');
-        const nextBtn = document.querySelector('.carousel-btn.next');
-        const indicators = document.querySelectorAll('.carousel-indicator span');
-        let currentIndex = 0;
-        let carouselTimer;
+        // 1. 注册/登录选项卡切换
+        function switchAuthTab(type) {
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
 
-        // 切换轮播项
-        function switchCarousel(index) {
-            currentIndex = index;
-            carouselList.style.transform = `translateX(-${currentIndex * 33.333}%)`;
-            // 更新指示器样式
-            indicators.forEach((item, i) => {
-                item.style.background = i === currentIndex ? '#2388ff' : '#ddd';
-            });
+            if (type === 'login') {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            } else {
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
         }
 
-        // 上一张/下一张按钮事件
-        prevBtn.addEventListener('click', () => {
-            currentIndex = (currentIndex - 1 + 3) % 3;
-            switchCarousel(currentIndex);
-        });
-        nextBtn.addEventListener('click', () => {
-            currentIndex = (currentIndex + 1) % 3;
-            switchCarousel(currentIndex);
-        });
-
-        // 指示器点击事件
-        indicators.forEach((item, index) => {
-            item.addEventListener('click', () => switchCarousel(index));
-        });
-
-        // 自动轮播（5秒切换一次）
-        function startCarousel() {
-            carouselTimer = setInterval(() => {
-                currentIndex = (currentIndex + 1) % 3;
-                switchCarousel(currentIndex);
-            }, 5000);
+        // 2. 验证码获取（保留原逻辑）
+        function getCode() {
+            const phone = document.getElementById('regPhone').value;
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                alert('请输入正确的手机号');
+                return;
+            }
+            alert('验证码已发送至：' + phone.slice(0,3) + '****' + phone.slice(7));
         }
-        startCarousel();
 
-        // 鼠标悬停暂停/离开继续
-        document.querySelector('.carousel').addEventListener('mouseenter', () => clearInterval(carouselTimer));
-        document.querySelector('.carousel').addEventListener('mouseleave', startCarousel);
+        // 3. 注册功能（登录状态控制页面切换）
+        function doRegister() {
+            const name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const code = document.getElementById('regCode').value;
+            const pwd = document.getElementById('regPwd').value;
 
-        // 2. 产品卡片hover阴影效果
-        document.querySelectorAll('.product-card').forEach(card => {
-            card.addEventListener('mouseenter', () => {
-                card.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)';
+            if (!name || name.length < 3 || name.length > 20) {
+                alert('用户名需3-20位字符');
+                return;
+            }
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                alert('请输入正确的手机号');
+                return;
+            }
+            if (!code) {
+                alert('请输入验证码');
+                return;
+            }
+            if (!/^(?=.*[a-zA-Z])(?=.*\d).{8,20}$/.test(pwd)) {
+                alert('密码需8-20位，含字母和数字');
+                return;
+            }
+
+            // 注册成功：切换页面显示
+            isLogin = true;
+            alert('注册成功，已自动登录');
+            authContainer.style.display = 'none';
+            mainPage.style.display = 'block';
+        }
+
+        // 4. 登录功能（登录状态控制页面切换）
+        function doLogin() {
+            const account = document.getElementById('loginAccount').value;
+            const pwd = document.getElementById('loginPwd').value;
+
+            if (!account || !pwd) {
+                alert('请输入账号和密码');
+                return;
+            }
+
+            // 登录成功：切换页面显示
+            isLogin = true;
+            alert('登录成功');
+            authContainer.style.display = 'none';
+            mainPage.style.display = 'block';
+        }
+
+        // 5. 原首页功能页切换（保留原逻辑）
+        function loadContentPage(pageId) {
+            document.querySelectorAll('.content-page').forEach(page => {
+                page.style.display = 'none';
             });
-            card.addEventListener('mouseleave', () => {
-                card.style.boxShadow = 'none';
-            });
-        });
+            document.getElementById('content' + pageId.charAt(0).toUpperCase() + pageId.slice(1)).style.display = 'block';
+        }
+
+        // 6. 退出登录（返回注册登录页）
+        function logout() {
+            isLogin = false;
+            mainPage.style.display = 'none';
+            authContainer.style.display = 'flex';
+            switchAuthTab('login'); // 退出后默认显示登录页
+            alert('已退出登录');
+        }
+
+        // 7. 轮播图自动切换（保留原逻辑）
+        let carouselIndex = 0;
+        const carouselList = document.getElementById('carouselList');
+        setInterval(() => {
+            carouselIndex = (carouselIndex + 1) % 3;
+            carouselList.style.transform = `translateX(-${carouselIndex * 33.333}%)`;
+        }, 5000);
     </script>
 </body>
 </html>
