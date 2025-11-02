@@ -11,8 +11,7 @@
         .btn{padding:10px 20px;background:#1890ff;color:#fff;border-radius:4px;cursor:pointer;border:none;transition:background 0.3s;}
         .btn:hover{background:#096dd9;}
         .text-primary{color:#1890ff;}
-
-        /* 注册登录页：默认显示，登录后隐藏 */
+        /* 注册登录页样式 */
         .auth-container{position:fixed;top:0;left:0;width:100%;height:100%;background:#f5f7fa;z-index:2000;display:flex;align-items:center;justify-content:center;}
         .auth-panel{width:450px;background:#fff;border-radius:12px;padding:35px;box-shadow:0 8px 30px rgba(0,0,0,0.12);}
         .auth-tabs{display:flex;border-bottom:1px solid #e8e8e8;margin-bottom:25px;}
@@ -29,13 +28,12 @@
         .form-note{text-align:center;margin:15px 0 25px;font-size:13px;color:#666;}
         .form-note a{color:#1890ff;text-decoration:none;cursor:pointer;}
         .submit-btn{width:100%;padding:14px 0;font-size:16px;}
-
-        /* 首页及功能页：默认隐藏，登录后显示 */
+        /* 首页默认隐藏 */
         .main-page{display:none;}
     </style>
 </head>
 <body>
-    <!-- 注册登录容器（登录状态控制显示/隐藏） -->
+    <!-- 注册登录容器 -->
     <div class="auth-container" id="authContainer">
         <div class="auth-panel">
             <!-- 登录/注册选项卡 -->
@@ -43,7 +41,6 @@
                 <div class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">账号登录</div>
                 <div class="auth-tab" id="registerTab" onclick="switchAuthTab('register')">账号注册</div>
             </div>
-
             <!-- 登录表单 -->
             <div class="auth-form" id="loginForm">
                 <div class="form-group">
@@ -59,7 +56,6 @@
                 </div>
                 <button class="btn submit-btn" onclick="doLogin()">登录</button>
             </div>
-
             <!-- 注册表单（默认隐藏） -->
             <div class="auth-form" id="registerForm" style="display:none;">
                 <div class="form-group">
@@ -88,9 +84,10 @@
             </div>
         </div>
     </div>
-    <!-- 首页及功能页（登录后显示，内容不变） -->
+
+    <!-- 首页及功能页容器（后续步骤补充内容） -->
     <div class="main-page" id="mainPage">
-        <!-- 导航栏（阿里云深色风格） -->
+        <!-- 导航栏 -->
         <header style="background:#001529;position:sticky;top:0;z-index:999;">
             <div class="container nav-wrap" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
                 <div class="logo" style="font-size:22px;font-weight:bold;color:#fff;">ZHY云</div>
@@ -104,7 +101,8 @@
                 </ul>
             </div>
         </header>
-        <!-- 内容页面容器（原内容完全保留） -->
+
+        <!-- 内容页面容器 -->
         <div class="container">
             <!-- 首页内容（默认显示） -->
             <div id="contentHome" class="content-page" style="display:block;min-height:500px;padding:40px 0;">
@@ -150,6 +148,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- 产品页（隐藏，导航切换显示） -->
             <div id="contentProduct" class="content-page" style="min-height:500px;padding:40px 0;display:none;">
                 <div class="section-title" style="text-align:center;margin-bottom:36px;">
@@ -212,7 +211,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- 价格页（隐藏，导航切换显示） -->
             <div id="contentPrice" class="content-page" style="min-height:500px;padding:40px 0;display:none;">
                 <div class="section-title" style="text-align:center;margin-bottom:36px;">
@@ -272,19 +270,54 @@
             </div>
         </div>
     </div>
-    <!-- 核心交互JS（新增注册登录切换，保留原功能） -->
+
+    <!-- 前台核心交互JS -->
     <script>
         let isLogin = false;
         const authContainer = document.getElementById('authContainer');
         const mainPage = document.getElementById('mainPage');
 
-        // 1. 注册/登录选项卡切换
+        // 初始化：更新浏览量+轮播图自动切换
+        window.onload = function() {
+            updateViewStats();
+            // 轮播图逻辑
+            let carouselIndex = 0;
+            const carouselList = document.getElementById('carouselList');
+            setInterval(() => {
+                carouselIndex = (carouselIndex + 1) % 3;
+                carouselList.style.transform = `translateX(-${carouselIndex * 33.333}%)`;
+            }, 5000);
+        };
+
+        // 浏览量统计：同步到localStorage供后台读取
+        function updateViewStats() {
+            const savedViews = localStorage.getItem('zhyCloudViewStats');
+            let viewStats = savedViews ? JSON.parse(savedViews) : {
+                today: 0,
+                yesterday: 0,
+                allTime: 0,
+                updateTime: new Date().toLocaleString()
+            };
+            // 日期判断：跨天重置今日数据
+            const today = new Date().toLocaleDateString();
+            const lastDate = new Date(viewStats.updateTime).toLocaleDateString();
+            if (today !== lastDate) {
+                viewStats.yesterday = viewStats.today;
+                viewStats.today = 0;
+            }
+            // 增加浏览量并保存
+            viewStats.today += 1;
+            viewStats.allTime += 1;
+            viewStats.updateTime = new Date().toLocaleString();
+            localStorage.setItem('zhyCloudViewStats', JSON.stringify(viewStats));
+        }
+
+        // 注册/登录选项卡切换
         function switchAuthTab(type) {
             const loginTab = document.getElementById('loginTab');
             const registerTab = document.getElementById('registerTab');
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
-
             if (type === 'login') {
                 loginTab.classList.add('active');
                 registerTab.classList.remove('active');
@@ -298,7 +331,7 @@
             }
         }
 
-        // 2. 验证码获取（保留原逻辑）
+        // 获取验证码
         function getCode() {
             const phone = document.getElementById('regPhone').value;
             if (!/^1[3-9]\d{9}$/.test(phone)) {
@@ -307,14 +340,13 @@
             }
             alert('验证码已发送至：' + phone.slice(0,3) + '****' + phone.slice(7));
         }
-
-        // 3. 注册功能（登录状态控制页面切换）
+        // 注册功能：用户数据同步到localStorage
         function doRegister() {
             const name = document.getElementById('regName').value;
             const phone = document.getElementById('regPhone').value;
             const code = document.getElementById('regCode').value;
             const pwd = document.getElementById('regPwd').value;
-
+            // 表单验证
             if (!name || name.length < 3 || name.length > 20) {
                 alert('用户名需3-20位字符');
                 return;
@@ -331,32 +363,39 @@
                 alert('密码需8-20位，含字母和数字');
                 return;
             }
-
-            // 注册成功：切换页面显示
+            // 保存用户数据到localStorage
+            const savedUsers = localStorage.getItem('zhyCloudUsers');
+            const users = savedUsers ? JSON.parse(savedUsers) : [];
+            users.push({
+                name: name,
+                phone: phone,
+                pwd: pwd, // 实际项目需加密，此处为演示
+                registerTime: new Date().toLocaleString()
+            });
+            localStorage.setItem('zhyCloudUsers', JSON.stringify(users));
+            // 注册成功切换页面
             isLogin = true;
             alert('注册成功，已自动登录');
             authContainer.style.display = 'none';
             mainPage.style.display = 'block';
         }
 
-        // 4. 登录功能（登录状态控制页面切换）
+        // 登录功能
         function doLogin() {
             const account = document.getElementById('loginAccount').value;
             const pwd = document.getElementById('loginPwd').value;
-
             if (!account || !pwd) {
                 alert('请输入账号和密码');
                 return;
             }
-
-            // 登录成功：切换页面显示
+            // 实际项目需对接后端验证，此处为演示
             isLogin = true;
             alert('登录成功');
             authContainer.style.display = 'none';
             mainPage.style.display = 'block';
         }
 
-        // 5. 原首页功能页切换（保留原逻辑）
+        // 内容页面切换
         function loadContentPage(pageId) {
             document.querySelectorAll('.content-page').forEach(page => {
                 page.style.display = 'none';
@@ -364,22 +403,14 @@
             document.getElementById('content' + pageId.charAt(0).toUpperCase() + pageId.slice(1)).style.display = 'block';
         }
 
-        // 6. 退出登录（返回注册登录页）
+        // 退出登录
         function logout() {
             isLogin = false;
             mainPage.style.display = 'none';
             authContainer.style.display = 'flex';
-            switchAuthTab('login'); // 退出后默认显示登录页
+            switchAuthTab('login');
             alert('已退出登录');
         }
-
-        // 7. 轮播图自动切换（保留原逻辑）
-        let carouselIndex = 0;
-        const carouselList = document.getElementById('carouselList');
-        setInterval(() => {
-            carouselIndex = (carouselIndex + 1) % 3;
-            carouselList.style.transform = `translateX(-${carouselIndex * 33.333}%)`;
-        }, 5000);
     </script>
 </body>
 </html>
